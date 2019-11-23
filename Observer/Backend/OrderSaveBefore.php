@@ -239,14 +239,23 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
     }
 
     /**
+     * Get the registry flag.
+     */
+    public function getRegistryFlag($type)
+    {
+        return 'backend_' . $type . '_success_' . $this->order->getId();
+    }
+
+    /**
      * Checks if the MOTO logic should be triggered.
      */
     public function needsMotoProcessing()
     {
         return $this->backendAuthSession->isLoggedIn()
+        && in_array($this->methodId, $this->config->getMethodsList())
         && isset($this->params['ckoCardToken'])
         && $this->methodId == 'checkoutcom_moto'
-        && !$this->registry->registry('backend_moto_success')
+        && !$this->registry->registry($this->getRegistryFlag('moto'))
         && !$this->transactionHandler->hasTransaction(
             Transaction::TYPE_AUTH,
             $this->order
@@ -258,12 +267,12 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
      */
     public function needsBackendCapture()
     {
-        // Return the test
         return $this->backendAuthSession->isLoggedIn()
+        && in_array($this->methodId, $this->config->getMethodsList())
         && isset($this->params['invoice']['capture_case'])
         && $this->params['invoice']['capture_case'] == 'online'
         && ($this->payment->canCapturePartial() || $this->payment->canCapture())
-        && !$this->registry->registry('backend_capture_success')
+        && !$this->registry->registry($this->getRegistryFlag('capture'))
         && $this->transactionHandler->hasTransaction(
             Transaction::TYPE_AUTH,
             $this->order
@@ -277,8 +286,9 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
     {
         // Return the test
         return $this->backendAuthSession->isLoggedIn()
+        && in_array($this->methodId, $this->config->getMethodsList())
         && $this->request->getActionName() == 'voidPayment'
-        && !$this->registry->registry('backend_void_success');
+        && !$this->registry->registry($this->getRegistryFlag('void'));
     }
 
     /**
@@ -288,6 +298,7 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
     {
         // Return the test
         return $this->backendAuthSession->isLoggedIn()
+        && in_array($this->methodId, $this->config->getMethodsList())
         && $this->request->getActionName() == 'cancel';
     }
 
@@ -309,7 +320,7 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
             
             // Set a success registry value
             if ($this->api->isValidResponse($response)) {
-                $this->registry->register('backend_void_success', true);
+                $this->registry->register($this->getRegistryFlag('void'), true);
             }
 
             return $response;
@@ -364,7 +375,7 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
 
         // Set a registry value
         if ($this->api->isValidResponse($response)) {
-            $this->registry->register('backend_capture_success', true);
+            $this->registry->register($this->getRegistryFlag('capture'), true);
 
             // Lock the auth transaction
             $authTransaction = $this->transactionHandler->hasTransaction(
@@ -426,7 +437,7 @@ class OrderSaveBefore implements \Magento\Framework\Event\ObserverInterface
 
         // Set a success registry value
         if ($this->api->isValidResponse($response)) {
-            $this->registry->register('backend_moto_success', true);
+            $this->registry->register($this->getRegistryFlag('moto'), true);
         }
 
         return $response;
