@@ -59,8 +59,10 @@ define(
                 initAddressObserver: function () {
                     var self = this;
                     Quote.billingAddress.subscribe(function () {
-                        if (AdditionalValidators.validate() && Frames.isCardValid()) {
-                            Utilities.allowPlaceOrder(self.buttonId, true);
+                        if (Frames.isCardValid() && Utilities.methodIsSelected(METHOD_ID)) {
+                            if (AdditionalValidators.validate()) {
+                                Utilities.allowPlaceOrder(self.buttonId, true);
+                            }
                         }
                     });
                 },
