@@ -22,6 +22,8 @@ namespace CheckoutCom\Magento2\Model\Service;
  */
 class WebhookHandlerService
 {
+    public $orderModel;
+
     /**
      * @var OrderHandlerService
      */
@@ -51,12 +53,14 @@ class WebhookHandlerService
      * WebhookHandlerService constructor
      */
     public function __construct(
+        \Magento\Sales\Model\Order $orderModel,
         \CheckoutCom\Magento2\Model\Service\OrderHandlerService $orderHandler,
         \CheckoutCom\Magento2\Model\Service\TransactionHandlerService $transactionHandler,
         \CheckoutCom\Magento2\Model\Entity\WebhookEntityFactory $webhookEntityFactory,
         \CheckoutCom\Magento2\Gateway\Config\Config $config,
         \CheckoutCom\Magento2\Helper\Logger $logger
     ) {
+        $this->orderModel = $orderModel;
         $this->orderHandler = $orderHandler;
         $this->transactionHandler = $transactionHandler;
         $this->webhookEntityFactory = $webhookEntityFactory;
@@ -84,6 +88,9 @@ class WebhookHandlerService
                 $order,
                 $webhooks
             );
+
+            // Handle webhooks for bank transfer APMs
+            $this->notifyCapturePending($order, $payload->type);
         } else {
             // Handle missing action ID
             $msg = __(
@@ -173,6 +180,13 @@ class WebhookHandlerService
 
             // Save the entity
             $entity->save();
+        }
+    }
+
+    public function notifyCapturePending($order, $webhook) {
+        if ($webhook == 'payment_capture_pending') {
+        $order->setState($this->orderModel::STATE_PENDING_PAYMENT);
+        $order->setStatus('pending_payment');
         }
     }
 }
