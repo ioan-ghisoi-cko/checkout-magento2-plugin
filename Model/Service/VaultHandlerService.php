@@ -197,6 +197,10 @@ class VaultHandlerService
      */
     public function save()
     {
+        $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/test.log');
+        $logger = new \Zend\Log\Logger();
+        $logger->addWriter($writer);
+        $logger->info(print_r($this->cardData, 1));
         // Create the payment token from response
         $paymentToken = $this->vaultToken->create(
             $this->cardData,
@@ -274,9 +278,14 @@ class VaultHandlerService
 
         // Check if the response is success
         $success = $api->isValidResponse($this->response);
+        $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/test.log');
+        $logger = new \Zend\Log\Logger();
+        $logger->addWriter($writer);
+        $logger->info(print_r($success, 1));
         if ($success) {
             // Get the response array
             $values = $this->response->getValues();
+            $logger->info(print_r($values));
             if (isset($values['source'])) {
                 // Get the card data
                 $cardData = $values['source'];
