@@ -278,10 +278,9 @@ class VaultHandlerService
 
         // Check if the response is success
         $success = $api->isValidResponse($this->response);
-        $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/test.log');
+        $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/values.log');
         $logger = new \Zend\Log\Logger();
         $logger->addWriter($writer);
-        $logger->info(print_r($success, 1));
         if ($success) {
             // Get the response array
             $values = $this->response->getValues();
